@@ -1,6 +1,8 @@
 package br.com.fiap.theMovie.services;
 
 import br.com.fiap.theMovie.controllers.dtos.MovieProfileResponse;
+import br.com.fiap.theMovie.exception.MovieNotFoundException;
+import br.com.fiap.theMovie.exception.UserNotFoundException;
 import br.com.fiap.theMovie.models.Movie;
 import br.com.fiap.theMovie.repositories.MovieRepository;
 import org.springframework.core.io.Resource;
@@ -41,10 +43,10 @@ public class MovieService {
         return repository.save(movie);
     }
 
-    public MovieProfileResponse getMovie(String name) {
-        return repository.findByName(name)
-                .map(MovieProfileResponse::new)
-                .orElseThrow(() -> new UsernameNotFoundException("Movie not found"));
+    public Movie getMovieByName(String name) {
+        return repository.findByName(name).orElseThrow(
+                        () -> new UserNotFoundException(name)
+                );
     }
 
     public void uploadPhoto(String name, MultipartFile file) {
@@ -121,6 +123,19 @@ public class MovieService {
 
     public List<Movie> findByUserId(Long user_id) {
         return repository.findByUserId(user_id);
+    }
+
+    public Movie getByUserId(Long user_id) {
+        return repository.findById(user_id).orElseThrow(
+                () -> new UserNotFoundException(user_id)
+        );
+    }
+
+    public void deleteMovie(Long id) {
+        repository.findById(id).orElseThrow(
+                () -> new MovieNotFoundException(id)
+        );
+        repository.deleteById(id);
     }
 
 }

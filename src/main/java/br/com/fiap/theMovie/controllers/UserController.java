@@ -4,8 +4,8 @@ import br.com.fiap.theMovie.controllers.dtos.UserProfileResponse;
 import br.com.fiap.theMovie.models.User;
 import br.com.fiap.theMovie.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -42,10 +42,15 @@ public class UserController {
                 .body(user);
     }
 
-    @GetMapping("profile")
-    public UserProfileResponse getUserProfile(){
-        var email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        return service.getUserProfile(email);
+    @GetMapping("{id}")
+    public UserProfileResponse getUserById(@PathVariable Long id) {
+        return UserProfileResponse.fromModel( service.getUserById(id) );
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment(@PathVariable Long id) {
+        service.deleteUser(id);
     }
 
 }

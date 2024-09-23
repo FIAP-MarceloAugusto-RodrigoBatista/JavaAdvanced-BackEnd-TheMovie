@@ -1,6 +1,7 @@
 package br.com.fiap.theMovie.services;
 
 import br.com.fiap.theMovie.controllers.dtos.UserProfileResponse;
+import br.com.fiap.theMovie.exception.UserNotFoundException;
 import br.com.fiap.theMovie.models.User;
 import br.com.fiap.theMovie.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +32,21 @@ public class UserService {
         return repository.save(user);
     }
 
-    public UserProfileResponse getUserProfile(String email) {
-        return repository.findByEmail(email)
-                .map(UserProfileResponse::new)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public User getUserById(Long id) {
+        return repository.findById(id).orElseThrow(
+                () -> new UserNotFoundException(id)
+        );
     }
 
     public List<User> findByName(String name) {
         return repository.findByNameContainingIgnoreCase(name);
     }
+
+    public void deleteUser(Long id) {
+        repository.findById(id).orElseThrow(
+                () -> new UserNotFoundException(id)
+        );
+        repository.deleteById(id);
+    }
+
 }

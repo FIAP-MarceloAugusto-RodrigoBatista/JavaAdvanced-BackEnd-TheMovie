@@ -11,8 +11,8 @@ public record MovieProfileResponse(
         Long userId
 ) {
 
-    public MovieProfileResponse(Movie movie){
-        this(movie.getPhoto(), movie.getName(), movie.getDescription(), movie.getActors(), movie.getId() );
+    public static MovieProfileResponse fromModel (Movie movie){
+        return new MovieProfileResponse(movie.getPhoto(), movie.getName(), movie.getDescription(), movie.getActors(), movie.getUserId());
     }
 
 }

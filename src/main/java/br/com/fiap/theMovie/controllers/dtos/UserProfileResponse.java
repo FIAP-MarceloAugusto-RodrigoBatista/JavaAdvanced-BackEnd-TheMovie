@@ -8,8 +8,8 @@ public record UserProfileResponse(
         String surname
 ) {
 
-    public UserProfileResponse(User user){
-        this(user.getEmail(), user.getName(), user.getSurname());
+    public static UserProfileResponse fromModel(User user){
+        return new UserProfileResponse(user.getEmail(), user.getName(), user.getSurname());
     }
 
 }

@@ -1,10 +1,12 @@
 package br.com.fiap.theMovie.controllers;
 
 import br.com.fiap.theMovie.controllers.dtos.MovieProfileResponse;
+import br.com.fiap.theMovie.controllers.dtos.UserProfileResponse;
 import br.com.fiap.theMovie.models.Movie;
 import br.com.fiap.theMovie.services.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -43,10 +45,9 @@ public class MovieController {
                 .body(movie);
     }
 
-    @GetMapping("info_movie")
-    public MovieProfileResponse getMovieProfile(){
-        var name = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        return service.getMovie(name);
+    @GetMapping("/info_movie")
+    public MovieProfileResponse getMovieProfile(@PathVariable String name){
+        return MovieProfileResponse.fromModel( service.getMovieByName(name) );
     }
 
     @PostMapping("photo")
@@ -67,5 +68,15 @@ public class MovieController {
         return service.findByUserId(userId);
     }
 
+    @GetMapping("/{user_id}")
+    public MovieProfileResponse getUserById(@PathVariable Long user_id) {
+        return MovieProfileResponse.fromModel( service.getByUserId(user_id) );
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment(@PathVariable Long id) {
+        service.deleteMovie(id);
+    }
 
 }
