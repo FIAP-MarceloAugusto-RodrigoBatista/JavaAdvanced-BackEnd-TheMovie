@@ -2,6 +2,7 @@ package br.com.fiap.theMovie.services;
 
 import br.com.fiap.theMovie.controllers.dtos.UserProfileResponse;
 import br.com.fiap.theMovie.exception.UserNotFoundException;
+import br.com.fiap.theMovie.models.Movie;
 import br.com.fiap.theMovie.models.User;
 import br.com.fiap.theMovie.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,43 +11,66 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
 
-    @Autowired
-    UserRepository repository;
+    private final UserRepository repository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    public UserService(UserRepository repository, PasswordEncoder passwordEncoder) {
+        this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public User create(User user){
+        user.setName(user.getName());
+        user.setSurname(user.getSurname());
+        user.setEmail(user.getEmail());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return repository.save(user);
+    }
 
     public List<User> findAll(){
         return repository.findAll();
     }
 
-    public User create(User user){
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setEmail(user.getEmail());
-        user.setName(user.getName());
-        user.setSurname(user.getSurname());
-        return repository.save(user);
+    public User findUserById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(
+                    () -> new UserNotFoundException(id)
+                );
     }
 
-    public User getUserById(Long id) {
-        return repository.findById(id).orElseThrow(
+    public User updateUser(Long id, User user){
+        User updatedUser = repository.findById(id).orElseThrow(
                 () -> new UserNotFoundException(id)
         );
-    }
 
-    public List<User> findByName(String name) {
-        return repository.findByNameContainingIgnoreCase(name);
+        // Atualiza os dados primários do filme
+        if (user.getName() != null) {
+            updatedUser.setName(user.getName());
+        }
+        if (user.getSurname() != null) {
+            updatedUser.setSurname(user.getSurname());
+        }
+        if (user.getEmail() != null) {
+            updatedUser.setEmail(user.getEmail());
+        }
+        if (user.getPassword() != null) {
+            updatedUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        return repository.save(updatedUser);
     }
 
     public void deleteUser(Long id) {
-        repository.findById(id).orElseThrow(
-                () -> new UserNotFoundException(id)
-        );
-        repository.deleteById(id);
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+        } else{
+            throw new UserNotFoundException(id);
+        }
     }
 
 }

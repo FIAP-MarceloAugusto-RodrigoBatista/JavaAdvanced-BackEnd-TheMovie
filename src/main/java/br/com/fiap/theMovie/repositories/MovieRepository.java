@@ -8,9 +8,7 @@ import java.util.Optional;
 
 public interface MovieRepository extends JpaRepository<Movie, Long> {
 
-    Optional<Movie> findByName(String name);
+    List<Movie> findByNameContainingIgnoreCase(String name);
 
-    List<Movie> findByUserId(Long user_id);
-
-//    List<Movie> findByMovieContainingIgnoreCase(String movie);
+    Movie findByUserId(Long user_id);
 }

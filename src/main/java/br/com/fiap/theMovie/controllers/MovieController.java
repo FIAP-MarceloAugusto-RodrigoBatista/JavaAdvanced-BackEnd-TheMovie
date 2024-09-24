@@ -3,6 +3,7 @@ package br.com.fiap.theMovie.controllers;
 import br.com.fiap.theMovie.controllers.dtos.MovieProfileResponse;
 import br.com.fiap.theMovie.controllers.dtos.UserProfileResponse;
 import br.com.fiap.theMovie.models.Movie;
+import br.com.fiap.theMovie.repositories.MovieRepository;
 import br.com.fiap.theMovie.services.MovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -11,24 +12,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/movies")
 public class MovieController {
 
     private final MovieService service;
+    private final MovieRepository movieRepository;
 
     @Autowired
-    public MovieController(MovieService service) {
+    public MovieController(MovieService service, MovieRepository movieRepository) {
         this.service = service;
-    }
-
-    @GetMapping
-    public List<Movie> findAll(@RequestParam(required = false) Long userId){
-        return service.findAll();
+        this.movieRepository = movieRepository;
     }
 
     @PostMapping
@@ -45,38 +49,59 @@ public class MovieController {
                 .body(movie);
     }
 
-    @GetMapping("/info_movie")
-    public MovieProfileResponse getMovieProfile(@PathVariable String name){
-        return MovieProfileResponse.fromModel( service.getMovieByName(name) );
+    // Listagem de Filmes
+    @GetMapping
+    public ResponseEntity<List<Movie>> findAll(){
+        List<Movie> movies = service.findAll();
+        return ResponseEntity.ok(movies);
     }
 
-    @PostMapping("photo")
-    public void uploadPhoto(@RequestBody MultipartFile file){
-        var photo = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        service.uploadPhoto(photo, file);
+    // Busca do Filme pelo Id - Get Movie By Id
+    @GetMapping("/{id}")
+    public ResponseEntity<Movie> findMovieById(@PathVariable Long id){
+        Movie movie = service.findMovieById(id);
+        return ResponseEntity.ok(movie);
     }
 
-    // /users/avatar/avatar.jpg
-    @GetMapping("photo/{filename}")
-    public ResponseEntity<Resource> getAvatar(@PathVariable String filename){
-        return service.getPhoto(filename);
+    // Pesquisa de Filme pelo ID do Usuário
+    @GetMapping("/user/{user_id}")
+    public ResponseEntity<Movie> findMovieByUserId(@PathVariable Long user_id) {
+        Movie movie = service.findByUserId(user_id);
+        return ResponseEntity.ok(movie);
     }
 
-    @GetMapping("/{userId}")
-    public List<Movie> findByUserId(@RequestParam(required = false) Long userId){
-        if (userId != null) return service.findByUserId(userId);
-        return service.findByUserId(userId);
+    // Pesquisa de Filme pelo Nome
+    @GetMapping("/search")
+    public ResponseEntity<List<Movie>> findMoviesByNameContaining(@RequestParam String name) {
+        List<Movie> movies = service.findMoviesByNameContaining(name);
+        return ResponseEntity.ok(movies);
     }
 
-    @GetMapping("/{user_id}")
-    public MovieProfileResponse getUserById(@PathVariable Long user_id) {
-        return MovieProfileResponse.fromModel( service.getByUserId(user_id) );
+    @PutMapping("/{id}/photo")
+    public ResponseEntity<Movie> updateMovie(@PathVariable Long id,
+                                             @RequestPart("movie") Movie movie,
+                                             @RequestPart(value = "file", required = false) MultipartFile file){
+        Movie updatedMovie = service.updateMovie(id, movie, file);
+        return ResponseEntity.ok(updatedMovie);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(@PathVariable Long id) {
+    public void deleteMovie(@PathVariable Long id) {
         service.deleteMovie(id);
     }
 
+    /*
+        @PutMapping("/photo")
+        public void uploadPhoto(@PathVariable Long id, @RequestBody MultipartFile file){
+            var photo = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+            service.uploadPhoto(id, photo, file);
+        }
+
+        // /movies/photo/filme.jpg
+        @GetMapping("/photo/{filename}")
+        public ResponseEntity<Resource> getPhoto(@PathVariable String filename){
+            return service.getPhoto(filename);
+        }
+    */
 }

@@ -1,6 +1,5 @@
 package br.com.fiap.theMovie.controllers;
 
-import br.com.fiap.theMovie.controllers.dtos.UserProfileResponse;
 import br.com.fiap.theMovie.models.User;
 import br.com.fiap.theMovie.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +21,6 @@ public class UserController {
         this.service = service;
     }
 
-    @GetMapping
-    public List<User> findAll(@RequestParam(required = false) String name){
-        if (name != null) return service.findByName(name);
-        return service.findAll();
-    }
-
     @PostMapping
     public ResponseEntity<User> create(@RequestBody User user, UriComponentsBuilder uriBuilder){
         service.create(user);
@@ -42,15 +35,31 @@ public class UserController {
                 .body(user);
     }
 
-    @GetMapping("{id}")
-    public UserProfileResponse getUserById(@PathVariable Long id) {
-        return UserProfileResponse.fromModel( service.getUserById(id) );
+    // Busca de Todos os Usuários - Get All
+    @GetMapping
+    public ResponseEntity<List<User>> findAll(){
+        List<User> user = service.findAll();
+        return ResponseEntity.ok(user);
+    }
+
+    // Busca do Usuário pelo ID - Get User By Id
+    @GetMapping("/{id}")
+    public ResponseEntity<User> findUserById(@PathVariable Long id) {
+        User user = service.findUserById(id);
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user){
+        service.updateUser(id, user);
+        return ResponseEntity.accepted().build();
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         service.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 
 }
