@@ -78,10 +78,16 @@ public class MovieController {
     }
 
     @PutMapping("/{id}/photo")
+    public ResponseEntity<Void> uploadPhoto(@PathVariable Long id,
+                                            @RequestPart MultipartFile file) {
+        service.uploadPhoto(id, file);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping("/{id}")
     public ResponseEntity<Movie> updateMovie(@PathVariable Long id,
-                                             @RequestPart("movie") Movie movie,
-                                             @RequestPart(value = "file", required = false) MultipartFile file){
-        Movie updatedMovie = service.updateMovie(id, movie, file);
+                                             @RequestBody Movie movie) {
+        Movie updatedMovie = service.updateMovie(id, movie);
         return ResponseEntity.ok(updatedMovie);
     }
 
@@ -98,10 +104,11 @@ public class MovieController {
             service.uploadPhoto(id, photo, file);
         }
 
-        // /movies/photo/filme.jpg
-        @GetMapping("/photo/{filename}")
-        public ResponseEntity<Resource> getPhoto(@PathVariable String filename){
-            return service.getPhoto(filename);
-        }
     */
+
+    // /movies/photo/filme.jpg
+    @GetMapping("/photo/{filename}")
+    public ResponseEntity<Resource> getPhoto(@PathVariable String filename){
+        return service.getPhoto(filename);
+    }
 }

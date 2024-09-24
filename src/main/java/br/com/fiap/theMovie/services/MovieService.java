@@ -1,7 +1,9 @@
 package br.com.fiap.theMovie.services;
 
 import br.com.fiap.theMovie.exception.MovieNotFoundException;
+import br.com.fiap.theMovie.exception.UserNotFoundException;
 import br.com.fiap.theMovie.models.Movie;
+import br.com.fiap.theMovie.models.User;
 import br.com.fiap.theMovie.repositories.MovieRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,11 +61,10 @@ public class MovieService {
         return repository.findByNameContainingIgnoreCase(name);
     }
 
-    public Movie updateMovie(Long id, Movie movie, MultipartFile file) {
-        Movie updatedMovie = repository.findById(id)
-                .orElseThrow(() -> new MovieNotFoundException(id));
-
-        // Atualiza os dados primários do filme
+    public Movie updateMovie(Long id, Movie movie) {
+        Movie updatedMovie = repository.findById(id).orElseThrow(
+                () -> new UserNotFoundException(id)
+        );
         if (movie.getName() != null) {
             updatedMovie.setName(movie.getName());
         }
@@ -72,11 +73,6 @@ public class MovieService {
         }
         if (movie.getActors() != null) {
             updatedMovie.setActors(movie.getActors());
-        }
-
-        // Verifica se há um novo arquivo de foto foi enviado
-        if (file != null && !file.isEmpty()) {
-            uploadPhoto(id, updatedMovie.getName(), file);
         }
 
         return repository.save(updatedMovie);
@@ -89,24 +85,13 @@ public class MovieService {
         repository.deleteById(id);
     }
 
-    public void uploadPhoto(Long id, String name, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new RuntimeException("File is required");
+    public void uploadPhoto(Long id, MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
         }
-
-        System.out.println("Uploading file: " + file.getOriginalFilename());
 
         Path destinationPath = Path.of("src/main/resources/static/photos");
-
-        // Certifique-se de que o diretório existe
-        try {
-            if (!Files.exists(destinationPath)) {
-                Files.createDirectories(destinationPath);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to create directory for photos", e);
-        }
+        createDirectoryIfNotExists(destinationPath);
 
         Path destinationFile = destinationPath
                 .resolve(System.currentTimeMillis() + "_" + file.getOriginalFilename())
@@ -115,20 +100,26 @@ public class MovieService {
 
         try (InputStream is = file.getInputStream()) {
             Files.copy(is, destinationFile);
-            System.out.println("Arquivo salvo em: " + destinationFile);
+            String photoUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/movies/photo/")
+                    .path(destinationFile.getFileName().toString())
+                    .toUriString();
 
-            var movie = repository.findById(id)
-                    .orElseThrow(() -> new MovieNotFoundException(id));
-
-            var baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
-            var photoUrl = baseUrl + "/movies/photo/" + destinationFile.getFileName().toString();
-            System.out.println("Photo URL: " + photoUrl);
-
+            Movie movie = findMovieById(id);
             movie.setPhoto(photoUrl);
             repository.save(movie);
         } catch (IOException e) {
-            e.printStackTrace(); // Mostra a stack trace
             throw new RuntimeException("Error saving file: " + e.getMessage(), e);
+        }
+    }
+
+    private void createDirectoryIfNotExists(Path path) {
+        try {
+            if (!Files.exists(path)) {
+                Files.createDirectories(path);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create directory for photos", e);
         }
     }
 
@@ -136,20 +127,19 @@ public class MovieService {
         Path path = Paths.get("src/main/resources/static/photos/" + name);
         Resource file = UrlResource.from(path.toUri());
 
-        // Verificar a extensão do arquivo para definir o tipo de mídia
-        String fileExtension = getFileExtension(name);
-        MediaType mediaType = switch (fileExtension.toLowerCase()) {
+        MediaType mediaType = determineMediaType(name);
+        return ResponseEntity.ok().contentType(mediaType).body(file);
+    }
+
+    private MediaType determineMediaType(String fileName) {
+        String fileExtension = getFileExtension(fileName).toLowerCase();
+        return switch (fileExtension) {
             case "jpg", "jpeg" -> MediaType.IMAGE_JPEG;
             case "png" -> MediaType.IMAGE_PNG;
             case "gif" -> MediaType.IMAGE_GIF;
             case "bmp" -> MediaType.valueOf("image/bmp");
             default -> MediaType.APPLICATION_OCTET_STREAM;
         };
-
-        return ResponseEntity
-                .ok()
-                .contentType(mediaType)
-                .body(file);
     }
 
     private String getFileExtension(String fileName) {

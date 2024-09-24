@@ -19,16 +19,16 @@ public class SecurityConfig {
                 auth
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/users/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/users/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/users/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/users/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/movies").permitAll()
                         .requestMatchers(HttpMethod.GET, "/movies/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/movies").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/movies/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/movies/**").permitAll()
-                        .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.POST, "/movies").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/movies/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/movies/**").authenticated()
+                        .anyRequest().authenticated()
         );
         http.addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
